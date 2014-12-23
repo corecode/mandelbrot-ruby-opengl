@@ -51,6 +51,7 @@ def init_shaders
   program = create_shader_program(vertex_shader, fragment_shader)
   program.use
   error_check!
+  program
 end
 
 def init_vertices
@@ -86,12 +87,15 @@ end
 Glfw.init
 init_window
 init_vertices
-init_shaders
+program = init_shaders
+GL.glUniform2f(program.uniform_location('size'), 2.0, 2.0)
+GL.glUniform2f(program.uniform_location('center'), 0.0, 0.0)
 
 # window loop
 until @window.should_close?
   Glfw.wait_events
   GL.glClear(GL::GL_COLOR_BUFFER_BIT | GL::GL_DEPTH_BUFFER_BIT)
+  GL.glUniform2f(program.uniform_location('windowsize'), 800.0, 600.0)
   GL.glDrawArrays(GL::GL_TRIANGLES, 0, 6)
   @window.swap_buffers
 end

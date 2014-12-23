@@ -1,5 +1,8 @@
 #version 140
 
+uniform vec2 windowsize;
+uniform vec2 center;
+uniform vec2 size;
 out vec4 fColor;
 
 void main()
@@ -9,8 +12,8 @@ void main()
         vec2 c;
         int iters;
 
-        c.x = gl_FragCoord.x / 200 - 2;
-        c.y = gl_FragCoord.y / 200 - 2;
+        c.x = (gl_FragCoord.x / windowsize.x - 0.5) * size.x + center.x;
+        c.y = (gl_FragCoord.y / windowsize.y - 0.5) * size.y + center.y;
 
         z.x = 0;
         z.y = 0;
@@ -27,5 +30,9 @@ void main()
                         break;
                 }
         }
-        fColor = vec4( 0.0, (100-iters)/100.0, iters/100.0, 1.0 );
+
+        if (iters == 100)
+                fColor = vec4(0.0, 0.0, 0.0, 1.0);
+        else
+                fColor = vec4( 0.0, (100-iters)/100.0, iters/100.0, 1.0 );
 }
