@@ -37,8 +37,9 @@ def init_window
   Glfw::Window.window_hint(Glfw::CONTEXT_VERSION_MAJOR, 3)
   Glfw::Window.window_hint(Glfw::CONTEXT_VERSION_MINOR, 1)
   Glfw::Window.window_hint(Glfw::OPENGL_FORWARD_COMPAT, 1)
+  Glfw::Window.window_hint(Glfw::RESIZABLE, 1)
   #Glfw::Window.window_hint(Glfw::OPENGL_PROFILE, Glfw::OPENGL_CORE_PROFILE)
-  @window = Glfw::Window.new(800, 600, "Mandelbrot")
+  @window = Glfw::Window.new(1000, 1000, "Mandelbrot")
   @window.make_context_current
 end
 
@@ -48,10 +49,9 @@ def init_shaders
   fragment_shader = compile_shader(GL::GL_FRAGMENT_SHADER, "mandelbrot.frag")
   error_check!
 
-  program = create_shader_program(vertex_shader, fragment_shader)
-  program.use
+  @program = create_shader_program(vertex_shader, fragment_shader)
+  @program.use
   error_check!
-  program
 end
 
 def init_vertices
@@ -81,21 +81,44 @@ def init_vertices
   error_check!
 end
 
+def update_uniforms
+  GL.glUniform1f(@program.uniform_location('scale'), @scale)
+  GL.glUniform2f(@program.uniform_location('center'), *@center)
+  puts "scale: #@scale center: #@center"
+end
+
 #### script ####
 
 # initialization
 Glfw.init
 init_window
 init_vertices
-program = init_shaders
-GL.glUniform2f(program.uniform_location('size'), 2.0, 2.0)
-GL.glUniform2f(program.uniform_location('center'), 0.0, 0.0)
+init_shaders
+@scale = 3.0
+@center = [-1.0, 0.0]
+update_uniforms
+
+@window.set_mouse_button_callback do |window, button, action, _|
+  if action == Glfw::RELEASE
+    pos = window.cursor_pos
+    size = window.size
+    @center[0] = (pos[0].to_f / size[0] - 0.5) * @scale + @center[0]
+    @center[1] = -(pos[1].to_f / size[1] - 0.5) * @scale + @center[1]
+    case button
+    when Glfw::MOUSE_BUTTON_1
+      @scale /= 2.0
+    when Glfw::MOUSE_BUTTON_2
+      @scale *= 2.0
+    end
+    update_uniforms
+  end
+end
 
 # window loop
 until @window.should_close?
   Glfw.wait_events
   GL.glClear(GL::GL_COLOR_BUFFER_BIT | GL::GL_DEPTH_BUFFER_BIT)
-  GL.glUniform2f(program.uniform_location('windowsize'), 800.0, 600.0)
+  GL.glUniform2f(@program.uniform_location('windowsize'), @window.width, @window.height)
   GL.glDrawArrays(GL::GL_TRIANGLES, 0, 6)
   @window.swap_buffers
 end
